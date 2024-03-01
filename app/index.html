@@ -1,1 +1,256 @@
-Test
+<!DOCTYPE html>
+<html>
+<head>
+
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/highcharts-more.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+
+
+<style>
+
+#container {
+    height: 400px;
+}
+
+.highcharts-figure,
+.highcharts-data-table table {
+    min-width: 300px;
+    max-width: 500px;
+    margin: 1em auto;
+}
+
+.highcharts-data-table table {
+    font-family: Verdana, sans-serif;
+    border-collapse: collapse;
+    border: 1px solid #ebebeb;
+    margin: 10px auto;
+    text-align: center;
+    width: 100%;
+    max-width: 500px;
+}
+
+.highcharts-data-table caption {
+    padding: 1em 0;
+    font-size: 1.2em;
+    color: #555;
+}
+
+.highcharts-data-table th {
+    font-weight: 600;
+    padding: 0.5em;
+}
+
+.highcharts-data-table td,
+.highcharts-data-table th,
+.highcharts-data-table caption {
+    padding: 0.5em;
+}
+
+.highcharts-data-table thead tr,
+.highcharts-data-table tr:nth-child(even) {
+    background: #f8f8f8;
+}
+
+.highcharts-data-table tr:hover {
+    background: #f1f7ff;
+}
+
+
+</style>
+</head>
+<body > 
+ <!-- <div id="ww_cc111518bc434" v='1.3' loc='id' a='{"t":"ticker","lang":"en","sl_lpl":1,"ids":[],"font":"Arial","sl_ics":"one_a","sl_sot":"celsius","cl_bkg":"image","cl_font":"#FFFFFF","cl_cloud":"#FFFFFF","cl_persp":"#81D4FA","cl_sun":"#FFC107","cl_moon":"#FFC107","cl_thund":"#FF5722"}'>Weather Data Source: <a href="https://wetterlang.de/london_wetter_21_tage/" id="ww_cc111518bc434_u" target="_blank">wetterlang.de/london_wetter_21_tage/</a></div><script async src="https://app2.weatherwidget.org/js/?id=ww_cc111518bc434"></script> -->
+
+<figure style="position:fixed;left:33%;top:0px;width: 33%; height: 100%" class="highcharts-figure">
+    <div id="container"></div>
+</figure>
+
+<iframe style="position:fixed;top:0px;width: 33%; height: 100%" src="https://www.meteoblue.com/en/weather/widget/three/hyderabad_india_1269843?geoloc=fixed&nocurrent=0&noforecast=0&days=4&tempunit=CELSIUS&windunit=KILOMETER_PER_HOUR&layout=monochrome"  frameborder="0" scrolling="NO" allowtransparency="true" sandbox="allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox" style="width: 460px; height: 590px"></iframe><div><!-- DO NOT REMOVE THIS LINK --><a href="https://www.meteoblue.com/en/weather/week/hyderabad_india_1269843?utm_source=weather_widget&utm_medium=linkus&utm_content=three&utm_campaign=Weather%2BWidget" target="_blank" rel="noopener">meteoblue</a></div>
+
+<div style="position:fixed;left:66%;top:0px;width: 33%; height: 100%; background-color:gray">
+	<div id="score-frame"><a rel="nofollow" href="https://www.crictimes.org/cricket-scores">Live Cricket Scores</a></div><script type="text/javascript">var html = document.getElementById('score-frame');html.innerHTML = '<iframe src="https://cwidget.crictimes.org/?b=d9d9d9&sb=434343&c=cccccc&a=434343&bo=434343&dc=000000&db=ffffff" style="width:100%;min-height: 460px;" frameborder="0" scrolling="yes"></iframe>';</script>
+</div>
+
+
+</body>
+
+
+<script>
+/**
+ * Get the current time
+ */
+const getNow = () => {
+    const now = new Date();
+
+    return {
+        date: now,
+        hours: now.getHours() + now.getMinutes() / 60,
+        minutes: now.getMinutes() * 12 / 60 + now.getSeconds() * 12 / 3600,
+        seconds: now.getSeconds() * 12 / 60
+    };
+};
+
+let now = getNow();
+
+// Create the chart
+Highcharts.chart('container', {
+
+    chart: {
+        type: 'gauge',
+        plotBackgroundColor: null,
+        plotBackgroundImage: null,
+        plotBorderWidth: 0,
+        plotShadow: false,
+        height: '80%'
+    },
+
+    credits: {
+        enabled: false
+    },
+
+    title: {
+        text: ''
+    },
+
+    pane: {
+        background: [{
+            // default background
+        }, {
+            // reflex for supported browsers
+            backgroundColor: Highcharts.svg ? {
+                radialGradient: {
+                    cx: 0.5,
+                    cy: -0.4,
+                    r: 1.9
+                },
+                stops: [
+                    [0.5, 'rgba(255, 255, 255, 0.2)'],
+                    [0.5, 'rgba(200, 200, 200, 0.2)']
+                ]
+            } : null
+        }]
+    },
+
+    yAxis: {
+        labels: {
+            distance: -20
+        },
+        min: 0,
+        max: 12,
+        lineWidth: 0,
+        showFirstLabel: false,
+
+        minorTickInterval: 'auto',
+        minorTickWidth: 1,
+        minorTickLength: 5,
+        minorTickPosition: 'inside',
+        minorGridLineWidth: 0,
+        minorTickColor: '#666',
+
+        tickInterval: 1,
+        tickWidth: 2,
+        tickPosition: 'inside',
+        tickLength: 10,
+        tickColor: '#666',
+        title: {
+            text: 'Powered by<br/>Highcharts',
+            style: {
+                color: '#BBB',
+                fontWeight: 'normal',
+                fontSize: '8px',
+                lineHeight: '10px'
+            },
+            y: 10
+        }
+    },
+
+    tooltip: {
+        format: '{series.chart.tooltipText}'
+    },
+
+    series: [{
+        data: [{
+            id: 'hour',
+            y: now.hours,
+            dial: {
+                radius: '60%',
+                baseWidth: 4,
+                baseLength: '95%',
+                rearLength: 0
+            }
+        }, {
+            id: 'minute',
+            y: now.minutes,
+            dial: {
+                baseLength: '95%',
+                rearLength: 0
+            }
+        }, {
+            id: 'second',
+            y: now.seconds,
+            dial: {
+                radius: '100%',
+                baseWidth: 1,
+                rearLength: '20%'
+            }
+        }],
+        animation: false,
+        dataLabels: {
+            enabled: false
+        }
+    }]
+},
+
+// Move
+function (chart) {
+    setInterval(function () {
+
+        now = getNow();
+
+        if (chart.axes) { // not destroyed
+            const hour = chart.get('hour'),
+                minute = chart.get('minute'),
+                second = chart.get('second');
+
+            // Cache the tooltip text
+            chart.tooltipText = Highcharts.dateFormat('%H:%M:%S', now.date);
+
+            hour.update(now.hours, true, false);
+            minute.update(now.minutes, true, false);
+
+            // Move to 59 sec without animation ...
+            if (now.seconds === 0) {
+                second.update(-0.2, true, false);
+            }
+            // ... then bounce to next second
+            second.update(now.seconds, true, {
+                easing: 'easeOutBounce'
+            });
+        }
+
+    }, 1000);
+
+});
+
+/**
+ * Easing function from https://github.com/danro/easing-js/blob/master/easing.js
+ */
+Math.easeOutBounce = function (pos) {
+    if ((pos) < (1 / 2.75)) {
+        return (7.5625 * pos * pos);
+    }
+    if (pos < (2 / 2.75)) {
+        return (7.5625 * (pos -= (1.5 / 2.75)) * pos + 0.75);
+    }
+    if (pos < (2.5 / 2.75)) {
+        return (7.5625 * (pos -= (2.25 / 2.75)) * pos + 0.9375);
+    }
+    return (7.5625 * (pos -= (2.625 / 2.75)) * pos + 0.984375);
+};
+
+</script>
+</html>

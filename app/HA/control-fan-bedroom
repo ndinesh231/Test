@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Example</title>
+	
+	<style>
+body {
+  background-color: #131313;
+  display: grid;
+  place-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+.fan {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  position: relative;
+}
+
+.fan::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  border: 10px solid #777;
+  background-image: radial-gradient(#fff, #bbb);
+}
+
+.blade {
+  position: absolute;
+  background-image: linear-gradient(315deg, #fff 0%, #bbb 74%);
+  height: 50px;
+  width: 17px;
+}
+
+.ceiling-fan1 {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 50% 50% 10% 50% / 85% 85% 15% 15%;
+}
+.ceiling-fan2 {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 10% 50% 50% 50% / 15% 15% 85% 85%;
+}
+
+.ceiling-fan3 {
+  top: 50%;
+  right: 0;
+  transform: translate(-100%, -50%) rotate(90deg);
+  border-radius: 10% 50% 50% 50% / 15% 15% 85% 85%;
+}
+
+.ceiling-fan4 {
+  top: 50%;
+  left: 0;
+  transform: translate(100%, -50%) rotate(-90deg);
+  border-radius: 10% 50% 50% 50% / 15% 15% 85% 85%;
+}
+
+.hover {
+  animation: spin 1s linear infinite;
+  cursor: pointer;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+	</style>
+	
+</head>
+<body>
+
+<div class="fan" id="myFan">
+    <div class="ceiling-fan1 blade"></div>
+    <div class="ceiling-fan2 blade"></div>
+    <div class="ceiling-fan3 blade"></div>
+    <div class="ceiling-fan4 blade"></div>
+</div>
+<h4 style="color:white">Bed room fan</h4>
+
+
+    
+    <script>
+	    var data;
+        const socket = new WebSocket('ws://20.235.243.134:8123/api/websocket');
+        socket.onopen = function() {
+            //document.getElementById('output').innerHTML += '<p>Connected to server</p>';
+			
+			socket.send('{"type":"auth", "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIwZTc4NzE3YmRhZjM0ZDgwODI3MWIyMTVhN2U5N2JmMSIsImlhdCI6MTcyMDc4MTU1MywiZXhwIjoyMDM2MTQxNTUzfQ.jA0lVpPN9VmYCi3blad1Sv-WAJese9IpjS_Ta2R1zog"}');
+			
+			socket.send('{"id": 1, "type": "subscribe_trigger", "trigger": { "platform": "state", "entity_id": "light.fan" } }');
+			
+			<!-- setTimeout(()=>{ -->
+			  <!-- socket.send('{"id": 2, "type": "get_state", "entity_id": "light.fan" }') -->
+			<!-- }, 500); -->
+			
+			
+
+			
+        };
+        
+        socket.onmessage = function(event) {
+            // document.getElementById('output').innerHTML += '<p>Server: ' + event.data + '</p>';
+			
+			
+			console.log(JSON.parse(event.data));
+			data = (JSON.parse(event.data));
+			
+			
+			if(data.type == 'event'){
+			  if(data.event.variables.trigger.to_state.state == 'on') {
+			     document.getElementById("myFan").classList.add("hover");	
+			   }
+			   else{
+			   document.getElementById("myFan").classList.remove("hover");
+			  }
+			
+            };
+        }
+        socket.onclose = function() {
+            // document.getElementById('output').innerHTML += '<p>Disconnected from server</p>';
+        };
+        
+        function sendMessage() {
+            //const message = document.getElementById('messageInput').value;
+            //socket.send(message);
+            // document.getElementById('output').innerHTML += '<p>You: ' + message + '</p>';
+        }
+    </script>
+</body>
+</html>

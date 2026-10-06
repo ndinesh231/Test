@@ -1,1 +1,1408 @@
-Car Dashboard
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=800,height=480,
+               initial-scale=1,
+               maximum-scale=1,
+               user-scalable=no">
+<title>Car GPS Dashboard</title>
+<!-- =====================================================
+     LEAFLET
+====================================================== -->
+<link rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+/* =====================================================
+   RESET
+====================================================== */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+html,
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #02070d;
+    color: white;
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "SF Pro Display",
+        Arial,
+        sans-serif;
+}
+/* =====================================================
+   MAIN DASHBOARD
+====================================================== */
+.dashboard {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    min-width: 800px;
+    min-height: 480px;
+    overflow: hidden;
+    background:
+        radial-gradient(
+            ellipse at center,
+            rgba(0,100,170,.13),
+            transparent 65%
+        ),
+        #02070d;
+}
+/* =====================================================
+   MAP AREA
+====================================================== */
+.map-container {
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    top: 3%;
+    bottom: 14%;
+    z-index: 1;
+    overflow: hidden;
+    /*
+       REAL MAP FADE
+       Center = fully visible
+       Edges = gradually disappear
+    */
+    -webkit-mask-image:
+        radial-gradient(
+            ellipse 72% 84% at center,
+            #000 38%,
+            rgba(0,0,0,.96) 52%,
+            rgba(0,0,0,.72) 68%,
+            rgba(0,0,0,.25) 85%,
+            transparent 100%
+        );
+    mask-image:
+        radial-gradient(
+            ellipse 72% 84% at center,
+            #000 38%,
+            rgba(0,0,0,.96) 52%,
+            rgba(0,0,0,.72) 68%,
+            rgba(0,0,0,.25) 85%,
+            transparent 100%
+        );
+}
+/* =====================================================
+   MAP
+====================================================== */
+#map {
+    width: 100%;
+    height: 100%;
+    background: #050a10;
+    /*
+       Dark automotive look
+       OSM itself is light,
+       so we darken it with CSS.
+    */
+    filter:
+        brightness(.48)
+        contrast(1.25)
+        saturate(.65);
+}
+/*
+   Additional map vignette
+*/
+.map-vignette {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    background:
+        radial-gradient(
+            ellipse at center,
+            transparent 30%,
+            rgba(2,7,13,.08) 48%,
+            rgba(2,7,13,.42) 70%,
+            rgba(2,7,13,.85) 88%,
+            #02070d 100%
+        );
+}
+/*
+   Left/right atmospheric fading
+*/
+.map-left-fade {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 22%;
+    z-index: 6;
+    pointer-events: none;
+    background:
+        linear-gradient(
+            90deg,
+            #02070d 0%,
+            rgba(2,7,13,.85) 25%,
+            rgba(2,7,13,.25) 75%,
+            transparent 100%
+        );
+}
+.map-right-fade {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 22%;
+    z-index: 6;
+    pointer-events: none;
+    background:
+        linear-gradient(
+            270deg,
+            #02070d 0%,
+            rgba(2,7,13,.85) 25%,
+            rgba(2,7,13,.25) 75%,
+            transparent 100%
+        );
+}
+/* =====================================================
+   CURRENT LOCATION PULSE
+====================================================== */
+.location-pulse {
+    position: absolute;
+    left: 50%;
+    top: 56%;
+    width: 72px;
+    height: 72px;
+    z-index: 20;
+    transform:
+        translate(-50%, -50%);
+    border-radius: 50%;
+    border:
+        2px solid
+        rgba(0,160,255,.55);
+    pointer-events: none;
+    animation:
+        locationPulse 2s infinite;
+}
+@keyframes locationPulse {
+    0% {
+        transform:
+            translate(-50%, -50%)
+            scale(.35);
+        opacity: .9;
+    }
+    70% {
+        transform:
+            translate(-50%, -50%)
+            scale(1.25);
+        opacity: .15;
+    }
+    100% {
+        transform:
+            translate(-50%, -50%)
+            scale(1.5);
+        opacity: 0;
+    }
+}
+/* =====================================================
+   LEFT COMPASS PANEL
+====================================================== */
+.compass-panel {
+    position: absolute;
+    left: 0;
+    top: 10%;
+    bottom: 18%;
+    width: 31%;
+    z-index: 30;
+    border-radius:
+        0 65px 65px 0;
+    background:
+        linear-gradient(
+            90deg,
+            rgba(2,7,13,.99),
+            rgba(2,12,21,.94),
+            rgba(2,12,21,.52)
+        );
+    border-right:
+        1px solid
+        rgba(0,150,255,.45);
+    box-shadow:
+        18px 0 45px
+        rgba(0,100,180,.13);
+}
+/* =====================================================
+   COMPASS
+====================================================== */
+.compass {
+    position: absolute;
+    width: 245px;
+    height: 245px;
+    left: 50%;
+    top: 50%;
+    transform:
+        translate(-50%, -50%);
+    border-radius: 50%;
+    background:
+        radial-gradient(
+            circle,
+            #071622 0%,
+            #02080e 68%,
+            #010509 100%
+        );
+    border:
+        2px solid
+        #078cff;
+    box-shadow:
+        0 0 18px
+        rgba(0,145,255,.6),
+        inset 0 0 40px
+        rgba(0,120,255,.15);
+}
+/* inner rings */
+.compass::before {
+    content: "";
+    position: absolute;
+    inset: 12px;
+    border-radius: 50%;
+    border:
+        1px solid
+        rgba(0,180,255,.35);
+}
+.compass::after {
+    content: "";
+    position: absolute;
+    inset: 45px;
+    border-radius: 50%;
+    border:
+        1px solid
+        rgba(255,255,255,.1);
+}
+/* compass tick marks */
+.ticks {
+    position: absolute;
+    inset: 9px;
+    border-radius: 50%;
+    background:
+        repeating-conic-gradient(
+            from 0deg,
+            rgba(0,200,255,.9)
+            0deg 1deg,
+            transparent
+            1deg 6deg
+        );
+    -webkit-mask:
+        radial-gradient(
+            transparent 0 87%,
+            #000 88%
+        );
+    mask:
+        radial-gradient(
+            transparent 0 87%,
+            #000 88%
+        );
+}
+/* =====================================================
+   COMPASS NEEDLE
+====================================================== */
+.needle {
+    position: absolute;
+    width: 5px;
+    height: 80px;
+    left: 50%;
+    top: 50%;
+    transform:
+        translate(-50%, -100%)
+        rotate(0deg);
+    transform-origin:
+        bottom center;
+    border-radius: 5px;
+    background:
+        linear-gradient(
+            to top,
+            #ffffff 0 18%,
+            #ff2638 18% 100%
+        );
+    box-shadow:
+        0 0 15px
+        rgba(255,30,50,.8);
+    transition:
+        transform .25s ease-out;
+    z-index: 10;
+}
+.needle::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform:
+        translateX(-50%);
+    border-left:
+        10px solid transparent;
+    border-right:
+        10px solid transparent;
+    border-bottom:
+        28px solid #ff2638;
+}
+/* =====================================================
+   COMPASS LETTERS
+====================================================== */
+.compass-label {
+    position: absolute;
+    font-size: 15px;
+    font-weight: 600;
+    color: #d8efff;
+    z-index: 20;
+}
+.north {
+    top: 20px;
+    left: 50%;
+    transform:
+        translateX(-50%);
+    color: #ff3445;
+    font-size: 20px;
+}
+.south {
+    bottom: 20px;
+    left: 50%;
+    transform:
+        translateX(-50%);
+}
+.west {
+    left: 20px;
+    top: 50%;
+    transform:
+        translateY(-50%);
+}
+.east {
+    right: 20px;
+    top: 50%;
+    transform:
+        translateY(-50%);
+}
+/* =====================================================
+   HEADING TEXT
+====================================================== */
+.heading-value {
+    position: absolute;
+    left: 50%;
+    top: 52%;
+    transform:
+        translate(-50%, -50%);
+    text-align: center;
+    z-index: 30;
+}
+.heading-value .degrees {
+    font-size: 29px;
+    font-weight: 700;
+    letter-spacing: -1px;
+}
+.heading-value .direction {
+    margin-top: 3px;
+    font-size: 14px;
+    color: #9bdcff;
+}
+/* =====================================================
+   RIGHT SPEED PANEL
+====================================================== */
+.speed-panel {
+    position: absolute;
+    right: 0;
+    top: 10%;
+    bottom: 18%;
+    width: 31%;
+    z-index: 30;
+    border-radius:
+        65px 0 0 65px;
+    background:
+        linear-gradient(
+            270deg,
+            rgba(2,7,13,.99),
+            rgba(2,12,21,.94),
+            rgba(2,12,21,.52)
+        );
+    border-left:
+        1px solid
+        rgba(0,150,255,.45);
+    box-shadow:
+        -18px 0 45px
+        rgba(0,100,180,.13);
+}
+/* =====================================================
+   SPEEDOMETER
+====================================================== */
+.speedometer {
+    position: absolute;
+    width: 245px;
+    height: 245px;
+    left: 50%;
+    top: 50%;
+    transform:
+        translate(-50%, -50%);
+    border-radius: 50%;
+    background:
+        radial-gradient(
+            circle,
+            #071622 0%,
+            #02080e 68%,
+            #010509 100%
+        );
+    border:
+        2px solid
+        #078cff;
+    box-shadow:
+        0 0 18px
+        rgba(0,145,255,.6),
+        inset 0 0 40px
+        rgba(0,120,255,.15);
+}
+/* blue speed arc */
+.speed-arc {
+    position: absolute;
+    inset: 9px;
+    border-radius: 50%;
+    background:
+        conic-gradient(
+            from 225deg,
+            #00d0ff 0deg,
+            #008cff 120deg,
+            rgba(0,80,140,.10)
+            120deg 270deg,
+            transparent 270deg
+        );
+    -webkit-mask:
+        radial-gradient(
+            transparent 0 77%,
+            #000 78% 85%,
+            transparent 86%
+        );
+    mask:
+        radial-gradient(
+            transparent 0 77%,
+            #000 78% 85%,
+            transparent 86%
+        );
+}
+/* speed ticks */
+.speed-scale {
+    position: absolute;
+    inset: 17px;
+    border-radius: 50%;
+    background:
+        repeating-conic-gradient(
+            from 225deg,
+            rgba(255,255,255,.9)
+            0deg 1deg,
+            transparent
+            1deg 12deg
+        );
+    -webkit-mask:
+        radial-gradient(
+            transparent 0 88%,
+            #000 89% 100%
+        );
+    mask:
+        radial-gradient(
+            transparent 0 88%,
+            #000 89% 100%
+        );
+}
+/* =====================================================
+   SPEED VALUE
+====================================================== */
+.speed-number {
+    position: absolute;
+    left: 50%;
+    top: 51%;
+    transform:
+        translate(-50%, -50%);
+    text-align: center;
+    white-space: nowrap;
+}
+.speed-number .value {
+    font-size: 58px;
+    line-height: 1;
+    font-weight: 700;
+    letter-spacing: -3px;
+    text-shadow:
+        0 0 20px
+        rgba(255,255,255,.15);
+}
+.speed-number .unit {
+    margin-top: 5px;
+    font-size: 15px;
+    color: #9bdcff;
+}
+.speed-status {
+    position: absolute;
+    bottom: 25px;
+    left: 50%;
+    transform:
+        translateX(-50%);
+    font-size: 12px;
+    color: #00e9a0;
+    white-space: nowrap;
+}
+/* =====================================================
+   TOP STATUS
+====================================================== */
+.top-status {
+    position: absolute;
+    top: 12px;
+    left: 25px;
+    right: 25px;
+    z-index: 200;
+    display: flex;
+    justify-content: space-between;
+    color: #91b8ca;
+    font-size: 13px;
+}
+.status-right {
+    display: flex;
+    gap: 15px;
+}
+.gps-active {
+    color: #00e49a;
+}
+/* =====================================================
+   BOTTOM BAR
+====================================================== */
+.bottom-bar {
+    position: absolute;
+    left: 1.5%;
+    right: 1.5%;
+    bottom: 2.5%;
+    height: 78px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    border-radius: 24px;
+    background:
+        linear-gradient(
+            90deg,
+            rgba(3,15,26,.98),
+            rgba(4,20,34,.95)
+        );
+    border:
+        1px solid
+        rgba(0,150,255,.45);
+    box-shadow:
+        0 0 30px
+        rgba(0,100,180,.12);
+    backdrop-filter:
+        blur(15px);
+}
+.info {
+    flex: 1;
+    height: 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right:
+        1px solid
+        rgba(100,180,220,.18);
+}
+.info:last-child {
+    border-right: 0;
+}
+/* =====================================================
+   WEATHER
+====================================================== */
+.weather-icon {
+    font-size: 30px;
+    margin-right: 9px;
+}
+.weather-temp {
+    font-size: 26px;
+    font-weight: 700;
+}
+.weather-text {
+    font-size: 11px;
+    color: #91b8ce;
+    margin-top: 2px;
+}
+/* =====================================================
+   INFO
+====================================================== */
+.info-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    color: #7798aa;
+}
+.info-value {
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 3px;
+}
+/* GPS indicator */
+.gps-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 5px;
+    border-radius: 50%;
+    background: #00e49a;
+    box-shadow:
+        0 0 10px #00e49a;
+    animation:
+        gpsblink 1.5s infinite;
+}
+@keyframes gpsblink {
+    50% {
+        opacity: .35;
+    }
+}
+/* =====================================================
+   START SCREEN
+====================================================== */
+.start-screen {
+    position: absolute;
+    inset: 0;
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+        radial-gradient(
+            circle,
+            rgba(0,100,170,.20),
+            #02070d 65%
+        );
+}
+.start-button {
+    padding:
+        16px 35px;
+    border-radius: 14px;
+    border:
+        1px solid
+        #00aaff;
+    background:
+        rgba(0,80,130,.35);
+    color: white;
+    font-size: 17px;
+    font-weight: 600;
+    box-shadow:
+        0 0 25px
+        rgba(0,150,255,.25);
+}
+.hidden {
+    display: none;
+}
+/* =====================================================
+   LEAFLET
+====================================================== */
+/*
+   Keep attribution because OpenStreetMap requires it.
+*/
+.leaflet-control-attribution {
+    background:
+        rgba(0,0,0,.45) !important;
+    color:
+        rgba(255,255,255,.45) !important;
+    font-size: 7px !important;
+}
+.leaflet-control-attribution a {
+    color:
+        rgba(150,210,255,.6) !important;
+}
+.leaflet-control-zoom {
+    display: none !important;
+}
+</style>
+</head>
+<body>
+<div class="dashboard">
+    <!-- =================================================
+         MAP
+    ================================================== -->
+    <div class="map-container">
+        <div id="map"></div>
+        <div class="map-vignette"></div>
+        <div class="map-left-fade"></div>
+        <div class="map-right-fade"></div>
+    </div>
+    <!-- =================================================
+         CURRENT LOCATION PULSE
+    ================================================== -->
+    <div class="location-pulse"></div>
+    <!-- =================================================
+         TOP STATUS
+    ================================================== -->
+    <div class="top-status">
+        <div>
+            🚗 &nbsp; DRIVE
+        </div>
+        <div class="status-right">
+            <span id="gpsTop"
+                  class="gps-active">
+                ● GPS
+            </span>
+            <span>
+                ▮▮▮
+            </span>
+            <span>
+                🔋
+            </span>
+        </div>
+    </div>
+    <!-- =================================================
+         LEFT COMPASS
+    ================================================== -->
+    <div class="compass-panel">
+        <div class="compass">
+            <div class="ticks"></div>
+            <div class="compass-label north">
+                N
+            </div>
+            <div class="compass-label east">
+                E
+            </div>
+            <div class="compass-label south">
+                S
+            </div>
+            <div class="compass-label west">
+                W
+            </div>
+            <div id="needle"
+                 class="needle">
+            </div>
+            <div class="heading-value">
+                <div id="heading"
+                     class="degrees">
+                    --°
+                </div>
+                <div id="direction"
+                     class="direction">
+                    GPS
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- =================================================
+         RIGHT SPEEDOMETER
+    ================================================== -->
+    <div class="speed-panel">
+        <div class="speedometer">
+            <div class="speed-arc"></div>
+            <div class="speed-scale"></div>
+            <div class="speed-number">
+                <div id="speed"
+                     class="value">
+                    0
+                </div>
+                <div class="unit">
+                    km/h
+                </div>
+            </div>
+            <div class="speed-status">
+                ◉ LIVE GPS
+            </div>
+        </div>
+    </div>
+    <!-- =================================================
+         BOTTOM INFORMATION
+    ================================================== -->
+    <div class="bottom-bar">
+        <!-- WEATHER -->
+        <div class="info">
+            <div id="weatherIcon"
+                 class="weather-icon">
+                🌤️
+            </div>
+            <div>
+                <div id="temperature"
+                     class="weather-temp">
+                    --°
+                </div>
+                <div id="weatherText"
+                     class="weather-text">
+                    Loading
+                </div>
+            </div>
+        </div>
+        <!-- LOCATION -->
+        <div class="info">
+            <div>
+                <div class="info-title">
+                    LOCATION
+                </div>
+                <div id="location"
+                     class="info-value">
+                    GPS...
+                </div>
+            </div>
+        </div>
+        <!-- ALTITUDE -->
+        <div class="info">
+            <div>
+                <div class="info-title">
+                    ALTITUDE
+                </div>
+                <div id="altitude"
+                     class="info-value">
+                    -- m
+                </div>
+            </div>
+        </div>
+        <!-- ACCURACY -->
+        <div class="info">
+            <div>
+                <div class="info-title">
+                    ACCURACY
+                </div>
+                <div id="accuracy"
+                     class="info-value">
+                    -- m
+                </div>
+            </div>
+        </div>
+        <!-- GPS -->
+        <div class="info">
+            <div>
+                <div class="info-title">
+                    GPS
+                </div>
+                <div class="info-value">
+                    <span class="gps-dot"></span>
+                    <span id="gpsStatus">
+                        Waiting
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- =================================================
+         START
+    ================================================== -->
+    <div id="startScreen"
+         class="start-screen">
+        <button id="startButton"
+                class="start-button">
+            Start GPS & Compass
+        </button>
+    </div>
+</div>
+<!-- =====================================================
+     LEAFLET JS
+====================================================== -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+</script>
+<script>
+/* =====================================================
+   VARIABLES
+====================================================== */
+let map = null;
+let marker = null;
+let currentLat = null;
+let currentLon = null;
+let lastSpeed = 0;
+let weatherLoaded = false;
+/* =====================================================
+   MAP
+====================================================== */
+function initMap(lat, lon) {
+    /*
+       First GPS position
+    */
+    if (!map) {
+        map = L.map(
+            "map",
+            {
+                zoomControl: false,
+                attributionControl: true,
+                dragging: false,
+                scrollWheelZoom: false,
+                doubleClickZoom: false,
+                boxZoom: false,
+                keyboard: false,
+                touchZoom: false,
+                zoomAnimation: true,
+                fadeAnimation: true
+            }
+        );
+        /*
+           FREE OPENSTREETMAP TILES
+           No API key required.
+        */
+        L.tileLayer(
+            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            {
+                maxZoom: 19,
+                minZoom: 3,
+                subdomains: [
+                    "a",
+                    "b",
+                    "c"
+                ],
+                attribution:
+                    '&copy; OpenStreetMap contributors'
+            }
+        ).addTo(map);
+        /*
+           Set initial location
+        */
+        map.setView(
+            [lat, lon],
+            17
+        );
+        /*
+           CURRENT LOCATION ONLY
+           No route.
+           No direction line.
+        */
+        marker =
+            L.marker(
+                [lat, lon],
+                {
+                    icon:
+                        L.divIcon({
+                            className:
+                                "gps-location",
+                            html:
+                                `
+                                <div style="
+                                    width:40px;
+                                    height:40px;
+                                    border-radius:50%;
+                                    background:
+                                      rgba(0,150,255,.20);
+                                    border:
+                                      2px solid
+                                      rgba(0,180,255,.65);
+                                    display:flex;
+                                    align-items:center;
+                                    justify-content:center;
+                                    box-shadow:
+                                      0 0 20px
+                                      rgba(0,150,255,.7);
+                                ">
+                                    <div style="
+                                        width:16px;
+                                        height:16px;
+                                        border-radius:50%;
+                                        background:#ffffff;
+                                        border:
+                                          5px solid
+                                          #008cff;
+                                        box-shadow:
+                                          0 0 15px
+                                          #008cff;
+                                    ">
+                                    </div>
+                                </div>
+                                `,
+                            iconSize:
+                                [40,40],
+                            iconAnchor:
+                                [20,20]
+                        })
+                }
+            ).addTo(map);
+    }
+    /*
+       Update existing map
+    */
+    else {
+        map.setView(
+            [lat, lon],
+            map.getZoom(),
+            {
+                animate: true,
+                duration: .5
+            }
+        );
+        marker.setLatLng(
+            [lat, lon]
+        );
+    }
+}
+/* =====================================================
+   GPS
+====================================================== */
+function startGPS() {
+    if (!navigator.geolocation) {
+        setGPSStatus(
+            "Not Supported"
+        );
+        return;
+    }
+    navigator.geolocation.watchPosition(
+        function(position) {
+            const c =
+                position.coords;
+            currentLat =
+                c.latitude;
+            currentLon =
+                c.longitude;
+            /* ---------------------------------------------
+               SPEED
+            --------------------------------------------- */
+            if (
+                c.speed !== null &&
+                !isNaN(c.speed) &&
+                c.speed >= 0
+            ) {
+                const gpsSpeed =
+                    c.speed * 3.6;
+                /*
+                   Smooth GPS speed
+                */
+                lastSpeed =
+                    lastSpeed * .75 +
+                    gpsSpeed * .25;
+                document.getElementById(
+                    "speed"
+                ).textContent =
+                    lastSpeed.toFixed(0);
+            }
+            /* ---------------------------------------------
+               LOCATION
+            --------------------------------------------- */
+            document.getElementById(
+                "location"
+            ).textContent =
+                currentLat.toFixed(4) +
+                "°, " +
+                currentLon.toFixed(4) +
+                "°";
+            /* ---------------------------------------------
+               ALTITUDE
+            --------------------------------------------- */
+            if (
+                c.altitude !== null
+            ) {
+                document.getElementById(
+                    "altitude"
+                ).textContent =
+                    c.altitude.toFixed(0) +
+                    " m";
+            }
+            /* ---------------------------------------------
+               ACCURACY
+            --------------------------------------------- */
+            if (
+                c.accuracy !== null
+            ) {
+                document.getElementById(
+                    "accuracy"
+                ).textContent =
+                    "±" +
+                    c.accuracy.toFixed(0) +
+                    " m";
+            }
+            /* ---------------------------------------------
+               MAP
+            --------------------------------------------- */
+            initMap(
+                currentLat,
+                currentLon
+            );
+            /* ---------------------------------------------
+               STATUS
+            --------------------------------------------- */
+            setGPSStatus(
+                "Active"
+            );
+            /* ---------------------------------------------
+               WEATHER
+            --------------------------------------------- */
+            loadWeather(
+                currentLat,
+                currentLon
+            );
+        },
+        function(error) {
+            console.log(
+                "GPS Error:",
+                error
+            );
+            setGPSStatus(
+                "Permission Required"
+            );
+        },
+        {
+            enableHighAccuracy:
+                true,
+            maximumAge:
+                1000,
+            timeout:
+                10000
+        }
+    );
+}
+/* =====================================================
+   GPS STATUS
+====================================================== */
+function setGPSStatus(
+    status
+) {
+    document.getElementById(
+        "gpsStatus"
+    ).textContent =
+        status;
+    document.getElementById(
+        "gpsTop"
+    ).textContent =
+        status === "Active"
+            ? "● GPS"
+            : "○ GPS";
+}
+/* =====================================================
+   WEATHER
+====================================================== */
+async function loadWeather(
+    lat,
+    lon
+) {
+    if (weatherLoaded)
+        return;
+    weatherLoaded = true;
+    try {
+        const url =
+            "https://api.open-meteo.com/v1/forecast" +
+            "?latitude=" +
+            lat +
+            "&longitude=" +
+            lon +
+            "&current=temperature_2m,weather_code" +
+            "&timezone=auto";
+        const response =
+            await fetch(url);
+        const data =
+            await response.json();
+        const temperature =
+            data.current
+                .temperature_2m;
+        const code =
+            data.current
+                .weather_code;
+        document.getElementById(
+            "temperature"
+        ).textContent =
+            Math.round(
+                temperature
+            ) + "°";
+        document.getElementById(
+            "weatherText"
+        ).textContent =
+            weatherDescription(
+                code
+            );
+        document.getElementById(
+            "weatherIcon"
+        ).textContent =
+            weatherIcon(
+                code
+            );
+    }
+    catch (error) {
+        console.log(
+            "Weather error:",
+            error
+        );
+        document.getElementById(
+            "weatherText"
+        ).textContent =
+            "Unavailable";
+    }
+}
+/* =====================================================
+   WEATHER DESCRIPTION
+====================================================== */
+function weatherDescription(
+    code
+) {
+    if (code === 0)
+        return "Clear";
+    if ([1,2,3].includes(code))
+        return "Partly Cloudy";
+    if ([45,48].includes(code))
+        return "Fog";
+    if ([51,53,55,56,57].includes(code))
+        return "Drizzle";
+    if ([61,63,65,66,67].includes(code))
+        return "Rain";
+    if ([71,73,75,77].includes(code))
+        return "Snow";
+    if ([80,81,82].includes(code))
+        return "Showers";
+    if ([95,96,99].includes(code))
+        return "Thunderstorm";
+    return "Cloudy";
+}
+/* =====================================================
+   WEATHER ICON
+====================================================== */
+function weatherIcon(
+    code
+) {
+    if (code === 0)
+        return "☀️";
+    if ([1,2,3].includes(code))
+        return "🌤️";
+    if ([45,48].includes(code))
+        return "🌫️";
+    if ([51,53,55,56,57].includes(code))
+        return "🌦️";
+    if ([61,63,65,66,67].includes(code))
+        return "🌧️";
+    if ([71,73,75,77].includes(code))
+        return "❄️";
+    if ([80,81,82].includes(code))
+        return "🌦️";
+    if ([95,96,99].includes(code))
+        return "⛈️";
+    return "☁️";
+}
+/* =====================================================
+   COMPASS
+====================================================== */
+function updateCompass(
+    degrees
+) {
+    degrees =
+        ((degrees % 360) + 360) % 360;
+    document.getElementById(
+        "heading"
+    ).textContent =
+        Math.round(
+            degrees
+        ) + "°";
+    document.getElementById(
+        "direction"
+    ).textContent =
+        getDirection(
+            degrees
+        );
+    document.getElementById(
+        "needle"
+    ).style.transform =
+        "translate(-50%, -100%) " +
+        "rotate(" +
+        degrees +
+        "deg)";
+}
+/* =====================================================
+   COMPASS DIRECTION
+====================================================== */
+function getDirection(
+    degrees
+) {
+    const directions = [
+        "N",
+        "NE",
+        "E",
+        "SE",
+        "S",
+        "SW",
+        "W",
+        "NW"
+    ];
+    return directions[
+        Math.round(
+            degrees / 45
+        ) % 8
+    ];
+}
+/* =====================================================
+   IOS COMPASS
+====================================================== */
+async function startCompass() {
+    try {
+        /*
+           iOS requires permission
+           from a user interaction.
+        */
+        if (
+            typeof DeviceOrientationEvent !==
+                "undefined" &&
+            typeof DeviceOrientationEvent
+                .requestPermission ===
+                "function"
+        ) {
+            const permission =
+                await
+                DeviceOrientationEvent
+                    .requestPermission();
+            if (
+                permission !==
+                "granted"
+            ) {
+                console.log(
+                    "Compass permission denied"
+                );
+                return;
+            }
+        }
+        window.addEventListener(
+            "deviceorientation",
+            handleOrientation,
+            true
+        );
+    }
+    catch (error) {
+        console.log(
+            "Compass error:",
+            error
+        );
+    }
+}
+/* =====================================================
+   DEVICE ORIENTATION
+====================================================== */
+function handleOrientation(
+    event
+) {
+    let heading = null;
+    /*
+       iPhone Safari
+    */
+    if (
+        event.webkitCompassHeading !==
+        undefined &&
+        event.webkitCompassHeading !==
+        null
+    ) {
+        heading =
+            event.webkitCompassHeading;
+    }
+    /*
+       Other browsers
+    */
+    else if (
+        event.alpha !== null
+    ) {
+        heading =
+            360 - event.alpha;
+    }
+    if (
+        heading !== null
+    ) {
+        updateCompass(
+            heading
+        );
+    }
+}
+/* =====================================================
+   START BUTTON
+====================================================== */
+document.getElementById(
+    "startButton"
+).addEventListener(
+    "click",
+    async function() {
+        document.getElementById(
+            "startScreen"
+        ).classList.add(
+            "hidden"
+        );
+        /*
+           Start GPS
+        */
+        startGPS();
+        /*
+           Start compass
+        */
+        await startCompass();
+    }
+);
+</script>
+</body>
+</html>
